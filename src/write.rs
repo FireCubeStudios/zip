@@ -22,6 +22,7 @@ use flate2::write::DeflateEncoder;
 
 #[cfg(feature = "bzip2")]
 use bzip2::write::BzEncoder;
+use flate2::write::ZlibEncoder;
 
 #[cfg(feature = "time")]
 use time::OffsetDateTime;
@@ -55,7 +56,7 @@ enum GenericZipWriter<W: Write + io::Seek> {
         feature = "deflate-miniz",
         feature = "deflate-zlib"
     ))]
-    Deflater(DeflateEncoder<MaybeEncrypted<W>>),
+    Deflater(ZlibEncoder<MaybeEncrypted<W>>),
     #[cfg(feature = "bzip2")]
     Bzip2(BzEncoder<MaybeEncrypted<W>>),
     #[cfg(feature = "zstd")]
@@ -945,7 +946,7 @@ impl<W: Write + io::Seek> GenericZipWriter<W> {
                     feature = "deflate-miniz",
                     feature = "deflate-zlib"
                 ))]
-                CompressionMethod::Deflated => GenericZipWriter::Deflater(DeflateEncoder::new(
+                CompressionMethod::Deflated => GenericZipWriter::Deflater(ZlibEncoder::new(
                     bare,
                     flate2::Compression::new(
                         clamp_opt(
@@ -1100,7 +1101,7 @@ fn write_local_file_header<T: Write>(writer: &mut T, file: &ZipFileData) -> ZipR
     writer.write_u16::<LittleEndian>(flag)?;
     // Compression method
     #[allow(deprecated)]
-    writer.write_u16::<LittleEndian>(file.compression_method.to_u16())?;
+    writer.write_u16::<LittleEndian>(8)?; // DEFLATED ONE
     // last mod file time and last mod file date
     writer.write_u16::<LittleEndian>(file.last_modified_time.timepart())?;
     writer.write_u16::<LittleEndian>(file.last_modified_time.datepart())?;
