@@ -18,11 +18,10 @@ use std::mem;
     feature = "deflate-miniz",
     feature = "deflate-zlib"
 ))]
-use flate2::write::DeflateEncoder;
+use flate2::write::ZlibEncoder;
 
 #[cfg(feature = "bzip2")]
 use bzip2::write::BzEncoder;
-use flate2::write::ZlibEncoder;
 
 #[cfg(feature = "time")]
 use time::OffsetDateTime;
@@ -1100,8 +1099,9 @@ fn write_local_file_header<T: Write>(writer: &mut T, file: &ZipFileData) -> ZipR
     } | if file.encrypted { 1u16 << 0 } else { 0 };
     writer.write_u16::<LittleEndian>(flag)?;
     // Compression method
-    #[allow(deprecated)]
-    writer.write_u16::<LittleEndian>(8)?; // DEFLATED ONE
+   // #[allow(deprecated)]
+  //  writer.write_u16::<LittleEndian>(8u16)?;
+    writer.write_u16::<LittleEndian>(file.compression_method.to_u16())?;
     // last mod file time and last mod file date
     writer.write_u16::<LittleEndian>(file.last_modified_time.timepart())?;
     writer.write_u16::<LittleEndian>(file.last_modified_time.datepart())?;
